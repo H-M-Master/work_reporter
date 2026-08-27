@@ -1,0 +1,19 @@
+#!/bin/zsh
+# WorkReporter .app launcher — a thin shim, not a self-contained bundle.
+# It resolves the project directory from the bundle's OWN location and runs the
+# top-level work_reporter.py, so there is no duplicated Python source to keep in
+# sync. Portable: no hardcoded username / architecture / Python version.
+#
+# Requirement: WorkReporter.app must live next to work_reporter.py (i.e. inside
+# the project directory). See README.
+source "$HOME/.zshrc" 2>/dev/null
+export PATH="/opt/homebrew/bin:/usr/local/bin:/Library/Frameworks/Python.framework/Versions/Current/bin:$PATH"
+
+# .../WorkReporter.app/Contents/MacOS/WorkReporter  ->  .../WorkReporter.app
+APP_DIR="${0:A:h:h:h}"
+# project dir that contains work_reporter.py (the .app's parent)
+PROJECT_DIR="${APP_DIR:h}"
+cd "$PROJECT_DIR" || exit 1
+
+mkdir -p "$HOME/.work_reporter"
+exec python3 work_reporter.py 2>>"$HOME/.work_reporter/launch.log"

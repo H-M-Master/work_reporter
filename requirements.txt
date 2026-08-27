@@ -1,0 +1,4 @@
+# Runtime dependencies. Upper bounds guard against breaking major releases.
+# Verified working with: anthropic 0.86.0, Pillow 12.1.1, Python 3.13.
+anthropic>=0.40.0,<1.0.0
+Pillow>=10.0.0,<13.0.0

@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Local runtime data (Work Reporter stores everything under ~/.work_reporter)
+config.json
+
+# Scratch / pasted images that are not app assets
+img_v3_*.jpg

@@ -1,0 +1,18 @@
+{
+  "model": "claude-haiku-4-5-20251001",
+  "api_key": "",
+  "base_url": "",
+  "max_tokens": {
+    "detailed_report": 8192,
+    "summary_report": 1024
+  },
+  "screenshot": {
+    "max_width": 1280
+  },
+  "user_background": "",
+  "extra_instructions": "",
+  "lark": {
+    "doc_url": "",
+    "script_dir": ""
+  }
+}

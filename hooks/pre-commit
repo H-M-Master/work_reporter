@@ -1,0 +1,16 @@
+#!/bin/bash
+# Pre-commit gate: the test suite must pass before any commit is allowed.
+# Activated via `git config core.hooksPath hooks` (see README).
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+echo "pre-commit: running pytest…"
+if ! python3 -m pytest -q; then
+    echo ""
+    echo "pre-commit: tests FAILED — commit aborted."
+    echo "Fix the tests (or run with --no-verify to bypass intentionally)."
+    exit 1
+fi
+echo "pre-commit: tests passed ✓"
