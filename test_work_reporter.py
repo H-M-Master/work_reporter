@@ -836,3 +836,60 @@ class TestAnthropicProvider:
         with patch("work_reporter.anthropic.Anthropic") as MockA:
             wr.AnthropicProvider("k")
         assert MockA.call_args.kwargs == {"api_key": "k"}
+
+
+class TestOpenAICompatibleProvider:
+    class _FakeResp:
+        def __init__(self, payload):
+            self._b = json.dumps(payload).encode("utf-8")
+        def read(self):
+            return self._b
+        def __enter__(self):
+            return self
+        def __exit__(self, *a):
+            return False
+
+    @patch("work_reporter.urllib.request.urlopen")
+    def test_maps_parts_and_parses(self, mock_urlopen):
+        mock_urlopen.return_value = self._FakeResp({
+            "choices": [{"message": {"content": "hello"}}],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 3},
+        })
+        prov = wr.OpenAICompatibleProvider("KEY", "https://api.deepseek.com")
+        text, usage = prov.generate(
+            [{"type": "text", "text": "hi"},
+             {"type": "image", "data": "B64", "media_type": "image/jpeg"}],
+            "deepseek-chat", 100,
+        )
+        assert text == "hello"
+        assert usage == {"input_tokens": 5, "output_tokens": 3}
+        req = mock_urlopen.call_args.args[0]
+        assert req.full_url == "https://api.deepseek.com/chat/completions"
+        assert req.get_header("Authorization") == "Bearer KEY"
+        body = json.loads(req.data)
+        assert body["model"] == "deepseek-chat" and body["max_tokens"] == 100
+        content = body["messages"][0]["content"]
+        assert content[0] == {"type": "text", "text": "hi"}
+        assert content[1] == {
+            "type": "image_url",
+            "image_url": {"url": "data:image/jpeg;base64,B64"},
+        }
+
+    @patch("work_reporter.urllib.request.urlopen")
+    def test_strips_trailing_slash(self, mock_urlopen):
+        mock_urlopen.return_value = self._FakeResp(
+            {"choices": [{"message": {"content": "x"}}], "usage": {}})
+        prov = wr.OpenAICompatibleProvider("K", "https://api.openai.com/v1/")
+        prov.generate([{"type": "text", "text": "y"}], "gpt-4o", 10)
+        assert mock_urlopen.call_args.args[0].full_url == \
+            "https://api.openai.com/v1/chat/completions"
+
+    @patch("work_reporter.urllib.request.urlopen")
+    def test_http_error_raises(self, mock_urlopen):
+        import io
+        import urllib.error
+        mock_urlopen.side_effect = urllib.error.HTTPError(
+            "u", 401, "Unauthorized", None, io.BytesIO(b'{"error":"bad key"}'))
+        prov = wr.OpenAICompatibleProvider("K", "https://api.openai.com/v1")
+        with pytest.raises(RuntimeError):
+            prov.generate([{"type": "text", "text": "x"}], "gpt-4o", 10)

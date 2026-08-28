@@ -13,6 +13,8 @@ import json
 import base64
 import threading
 import subprocess
+import urllib.request
+import urllib.error
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -746,6 +748,63 @@ class AnthropicProvider:
         usage = {
             "input_tokens": resp.usage.input_tokens,
             "output_tokens": resp.usage.output_tokens,
+        }
+        return text, usage
+
+
+class OpenAICompatibleProvider:
+    """OpenAI 兼容供应商（POST {base_url}/chat/completions）。覆盖 DeepSeek /
+    Qwen / Kimi / GPT / Grok 及第三方中转站。用标准库 urllib，无额外依赖。
+
+    parts 中性格式同 AnthropicProvider：{"type":"text","text":str} 或
+    {"type":"image","data":<base64 str>,"media_type":str}。
+    """
+
+    def __init__(self, api_key: str, base_url: str):
+        self._api_key = api_key
+        self._base_url = base_url.rstrip("/")
+
+    def generate(self, parts: list, model: str, max_tokens: int) -> tuple[str, dict]:
+        content = []
+        for p in parts:
+            if p["type"] == "image":
+                content.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{p['media_type']};base64,{p['data']}",
+                    },
+                })
+            else:
+                content.append({"type": "text", "text": p["text"]})
+        body = json.dumps({
+            "model": model,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": content}],
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            self._base_url + "/chat/completions",
+            data=body,
+            headers={
+                "Authorization": f"Bearer {self._api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", "replace")
+            raise RuntimeError(f"HTTP {e.code}: {detail}") from e
+        except urllib.error.URLError as e:
+            raise RuntimeError(f"网络错误: {e.reason}") from e
+
+        choices = data.get("choices") or []
+        text = ((choices[0].get("message") or {}).get("content") or "") if choices else ""
+        usage_raw = data.get("usage") or {}
+        usage = {
+            "input_tokens": usage_raw.get("prompt_tokens", 0),
+            "output_tokens": usage_raw.get("completion_tokens", 0),
         }
         return text, usage
 
