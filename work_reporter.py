@@ -809,6 +809,50 @@ class OpenAICompatibleProvider:
         return text, usage
 
 
+# 服务商预设：键 → {显示名, api 类型, 默认 base_url}。
+# base_url 已按各家官方文档核实（2026-08-28）——注意 DeepSeek 不带 /v1。
+PROVIDERS = {
+    "anthropic": {"label": "Anthropic (Claude)", "api": "anthropic", "base_url": ""},
+    "deepseek":  {"label": "DeepSeek", "api": "openai",
+                  "base_url": "https://api.deepseek.com"},
+    "qwen":      {"label": "通义千问 Qwen", "api": "openai",
+                  "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1"},
+    "kimi":      {"label": "Kimi (Moonshot)", "api": "openai",
+                  "base_url": "https://api.moonshot.cn/v1"},
+    "openai":    {"label": "OpenAI (GPT)", "api": "openai",
+                  "base_url": "https://api.openai.com/v1"},
+    "grok":      {"label": "Grok (xAI)", "api": "openai",
+                  "base_url": "https://api.x.ai/v1"},
+    "custom":    {"label": "自定义 (OpenAI 兼容/中转站)", "api": "openai", "base_url": ""},
+}
+
+
+def resolve_credentials(cfg) -> tuple[str, str]:
+    """按所选服务商解析 (api_key, base_url)，含环境变量兜底。
+    base_url 为空时用预设默认；Anthropic 保留原有 /bedrock 相关兜底。"""
+    preset = PROVIDERS.get(cfg.provider, PROVIDERS["anthropic"])
+    base_url = cfg.base_url.strip() or preset["base_url"]
+    if preset["api"] == "anthropic":
+        api_key = (
+            cfg.api_key.strip()
+            or os.environ.get("ANTHROPIC_API_KEY", "").strip()
+            or os.environ.get("ANTHROPIC_AUTH_TOKEN", "").strip()
+        )
+        base_url = base_url or os.environ.get("ANTHROPIC_BEDROCK_BASE_URL", "").strip()
+    else:
+        api_key = cfg.api_key.strip() or os.environ.get("OPENAI_API_KEY", "").strip()
+    return api_key, base_url
+
+
+def make_provider(cfg):
+    """按 cfg.provider 构造对应 provider（Anthropic 或 OpenAI 兼容）。"""
+    preset = PROVIDERS.get(cfg.provider, PROVIDERS["anthropic"])
+    api_key, base_url = resolve_credentials(cfg)
+    if preset["api"] == "openai":
+        return OpenAICompatibleProvider(api_key, base_url)
+    return AnthropicProvider(api_key, base_url)
+
+
 def generate_reports(
     provider,
     activities: list,

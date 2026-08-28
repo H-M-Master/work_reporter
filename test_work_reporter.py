@@ -893,3 +893,42 @@ class TestOpenAICompatibleProvider:
         prov = wr.OpenAICompatibleProvider("K", "https://api.openai.com/v1")
         with pytest.raises(RuntimeError):
             prov.generate([{"type": "text", "text": "x"}], "gpt-4o", 10)
+
+
+class TestMakeProvider:
+    def test_anthropic_preset(self):
+        cfg = wr.Config(provider="anthropic", api_key="k")
+        with patch("work_reporter.anthropic.Anthropic"):
+            prov = wr.make_provider(cfg)
+        assert isinstance(prov, wr.AnthropicProvider)
+
+    def test_openai_preset_uses_default_base_url(self):
+        cfg = wr.Config(provider="deepseek", api_key="k")
+        prov = wr.make_provider(cfg)
+        assert isinstance(prov, wr.OpenAICompatibleProvider)
+        assert prov._base_url == "https://api.deepseek.com"
+
+    def test_base_url_override_wins(self):
+        cfg = wr.Config(provider="custom", api_key="k",
+                        base_url="https://relay.example.com/v1")
+        prov = wr.make_provider(cfg)
+        assert isinstance(prov, wr.OpenAICompatibleProvider)
+        assert prov._base_url == "https://relay.example.com/v1"
+
+    def test_resolve_credentials_openai_env_fallback(self):
+        cfg = wr.Config(provider="openai", api_key="")
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "envkey"}, clear=False):
+            api_key, base_url = wr.resolve_credentials(cfg)
+        assert api_key == "envkey"
+        assert base_url == "https://api.openai.com/v1"
+
+    def test_resolve_credentials_anthropic_env_fallback(self):
+        cfg = wr.Config(provider="anthropic", api_key="")
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "antkey"}, clear=False):
+            api_key, _ = wr.resolve_credentials(cfg)
+        assert api_key == "antkey"
+
+    def test_presets_have_required_keys(self):
+        for key, p in wr.PROVIDERS.items():
+            assert set(p) == {"label", "api", "base_url"}
+            assert p["api"] in ("anthropic", "openai")
