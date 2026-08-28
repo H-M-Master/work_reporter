@@ -2004,14 +2004,37 @@ class WorkReporter:
             fields[key] = var
 
         tab1.columnconfigure(1, weight=1)
-        _add_field(tab1, "模型名称", "model", CONFIG.model, 0)
-        _add_field(tab1, "详细版 max_tokens", "mt_detailed", CONFIG.max_tokens_detailed, 1)
-        _add_field(tab1, "总结版 max_tokens", "mt_summary", CONFIG.max_tokens_summary, 2)
-        _add_field(tab1, "截图压缩宽度", "max_width", CONFIG.screenshot_max_width, 3)
-        _add_field(tab1, "Lark 文档 URL", "lark_url", CONFIG.lark_doc_url, 4)
-        _add_field(tab1, "Lark Script Dir", "lark_dir", str(CONFIG.lark_script_dir_path), 5)
-        _add_field(tab1, "API Key", "api_key", CONFIG.api_key, 6, show="*")
-        _add_field(tab1, "Base URL (可选)", "base_url", CONFIG.base_url, 7)
+        # 必填/常用项放最前，小白一眼就知道该填哪
+        _add_field(tab1, "API Key（必填）", "api_key", CONFIG.api_key, 0, show="*")
+        _add_field(tab1, "模型名称", "model", CONFIG.model or "claude-haiku-4-5-20251001", 1)
+
+        # 分隔线：以下都有合理默认，进阶再改
+        tk.Label(
+            tab1, text="──  以下保持默认即可，进阶再改  ──",
+            bg=COLORS["bg"], fg=COLORS["text_sub"], font=("Helvetica", 10),
+            anchor=tk.W,
+        ).grid(row=2, column=0, columnspan=2, sticky=tk.EW, pady=(12, 4))
+
+        _add_field(tab1, "详细版 max_tokens", "mt_detailed", CONFIG.max_tokens_detailed, 3)
+        _add_field(tab1, "总结版 max_tokens", "mt_summary", CONFIG.max_tokens_summary, 4)
+        _add_field(tab1, "截图压缩宽度", "max_width", CONFIG.screenshot_max_width, 5)
+        _add_field(tab1, "Base URL（可选）", "base_url", CONFIG.base_url, 6)
+        _add_field(tab1, "Lark 文档 URL（可选）", "lark_url", CONFIG.lark_doc_url, 7)
+        # 用原始配置值（空时显示为空），避免空目录被渲染成 "."
+        _add_field(tab1, "Lark Script Dir（可选）", "lark_dir", CONFIG.lark_script_dir, 8)
+
+        # 底部小白教程，填补空白区
+        guide = (
+            "👋 新手其实只要填「API Key」就能用：\n"
+            "① API Key：Anthropic 密钥（sk-ant-… 开头），到 console.anthropic.com 申请\n"
+            "② 模型名称：已预填 claude-haiku-4-5-20251001（便宜够用），想要效果更好可换更强的模型\n"
+            "其余项都保持默认即可；Lark / Base URL 是进阶功能，用不到就别管。\n"
+            "配置只存在本机 ~/.work_reporter/config.json（权限 0600，仅你本人可读）。"
+        )
+        tk.Label(
+            tab1, text=guide, bg=COLORS["bg"], fg=COLORS["text_sub"],
+            font=("Helvetica", 10), justify=tk.LEFT, anchor=tk.W, wraplength=540,
+        ).grid(row=9, column=0, columnspan=2, sticky=tk.W, pady=(18, 0))
 
         # ── Tab 2/3: 用户背景（身份）与附加要求（均会真正生效）──────────────
         prompt_tabs = [
