@@ -2074,7 +2074,7 @@ class WorkReporter:
     def _open_settings(self):
         win = tk.Toplevel(self.root)
         win.title("设置")
-        win.geometry("600x520")
+        win.geometry("620x640")
         win.resizable(False, False)
         win.configure(bg=COLORS["bg"])
         win.grab_set()
@@ -2101,37 +2101,66 @@ class WorkReporter:
             fields[key] = var
 
         tab1.columnconfigure(1, weight=1)
-        # 必填/常用项放最前，小白一眼就知道该填哪
-        _add_field(tab1, "API Key（必填）", "api_key", CONFIG.api_key, 0, show="*")
-        _add_field(tab1, "模型名称", "model", CONFIG.model or "claude-haiku-4-5-20251001", 1)
+
+        # ── 服务商下拉（选预设自动填 Base URL）──
+        label_to_key = {v["label"]: k for k, v in PROVIDERS.items()}
+        cur_label = PROVIDERS.get(CONFIG.provider, PROVIDERS["anthropic"])["label"]
+        provider_var = tk.StringVar(value=cur_label)
+        tk.Label(tab1, text="服务商", bg=COLORS["bg"], fg=COLORS["text"],
+                 font=("Helvetica", 11), anchor=tk.W).grid(
+            row=0, column=0, sticky=tk.W, pady=4)
+        provider_combo = ttk.Combobox(
+            tab1, textvariable=provider_var, state="readonly",
+            values=[v["label"] for v in PROVIDERS.values()], width=28,
+        )
+        provider_combo.grid(row=0, column=1, sticky=tk.EW, padx=(8, 0), pady=4)
+
+        # 必填/常用项
+        _add_field(tab1, "API Key（必填）", "api_key", CONFIG.api_key, 1, show="*")
+        _add_field(tab1, "模型名称", "model",
+                   CONFIG.model or "claude-haiku-4-5-20251001", 2)
+
+        # 发送截图开关（视觉模型开、纯文本模型关）
+        send_ss_var = tk.BooleanVar(value=CONFIG.send_screenshots)
+        tk.Checkbutton(
+            tab1, text="发送截图给模型（需视觉模型；纯文本模型请取消勾选）",
+            variable=send_ss_var, bg=COLORS["bg"], fg=COLORS["text"],
+            activebackground=COLORS["bg"], selectcolor=COLORS["card"],
+            font=("Helvetica", 10), anchor=tk.W,
+        ).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=(2, 4))
 
         # 分隔线：以下都有合理默认，进阶再改
         tk.Label(
             tab1, text="──  以下保持默认即可，进阶再改  ──",
             bg=COLORS["bg"], fg=COLORS["text_sub"], font=("Helvetica", 10),
             anchor=tk.W,
-        ).grid(row=2, column=0, columnspan=2, sticky=tk.EW, pady=(12, 4))
+        ).grid(row=4, column=0, columnspan=2, sticky=tk.EW, pady=(12, 4))
 
-        _add_field(tab1, "详细版 max_tokens", "mt_detailed", CONFIG.max_tokens_detailed, 3)
-        _add_field(tab1, "总结版 max_tokens", "mt_summary", CONFIG.max_tokens_summary, 4)
-        _add_field(tab1, "截图压缩宽度", "max_width", CONFIG.screenshot_max_width, 5)
-        _add_field(tab1, "Base URL（可选）", "base_url", CONFIG.base_url, 6)
-        _add_field(tab1, "Lark 文档 URL（可选）", "lark_url", CONFIG.lark_doc_url, 7)
-        # 用原始配置值（空时显示为空），避免空目录被渲染成 "."
-        _add_field(tab1, "Lark Script Dir（可选）", "lark_dir", CONFIG.lark_script_dir, 8)
+        _add_field(tab1, "详细版 max_tokens", "mt_detailed", CONFIG.max_tokens_detailed, 5)
+        _add_field(tab1, "总结版 max_tokens", "mt_summary", CONFIG.max_tokens_summary, 6)
+        _add_field(tab1, "截图压缩宽度", "max_width", CONFIG.screenshot_max_width, 7)
+        _add_field(tab1, "Base URL（预设自动填；中转站手填）", "base_url", CONFIG.base_url, 8)
+        _add_field(tab1, "Lark 文档 URL（可选）", "lark_url", CONFIG.lark_doc_url, 9)
+        _add_field(tab1, "Lark Script Dir（可选）", "lark_dir", CONFIG.lark_script_dir, 10)
 
-        # 底部小白教程，填补空白区
+        # 选预设时自动填对应 Base URL（base_url 字段此时已创建；用户仍可手改）
+        def _on_provider_change(_event=None):
+            key = label_to_key.get(provider_var.get(), "anthropic")
+            fields["base_url"].set(PROVIDERS[key]["base_url"])
+        provider_combo.bind("<<ComboboxSelected>>", _on_provider_change)
+
+        # 底部小白教程
         guide = (
-            "👋 新手其实只要填「API Key」就能用：\n"
-            "① API Key：Anthropic 密钥（sk-ant-… 开头），到 console.anthropic.com 申请\n"
-            "② 模型名称：已预填 claude-haiku-4-5-20251001（便宜够用），想要效果更好可换更强的模型\n"
-            "其余项都保持默认即可；Lark / Base URL 是进阶功能，用不到就别管。\n"
-            "配置只存在本机 ~/.work_reporter/config.json（权限 0600，仅你本人可读）。"
+            "👋 新手三步：①选「服务商」（自动填 Base URL）②填该服务商的 API Key ③填模型名。\n"
+            "· Claude→Anthropic；DeepSeek/Qwen/Kimi/GPT/Grok 选对应项；中转站选「自定义」手填 Base URL。\n"
+            "· 模型名要填服务商支持的（如 deepseek-chat / qwen-plus / gpt-4o / grok-4 等）。\n"
+            "· 纯文本模型不支持看图 → 取消勾选「发送截图」；日报仍用活动记录/git/浏览器历史生成。\n"
+            "· 配置只存本机 ~/.work_reporter/config.json（权限 0600，仅你本人可读）。"
         )
         tk.Label(
             tab1, text=guide, bg=COLORS["bg"], fg=COLORS["text_sub"],
-            font=("Helvetica", 10), justify=tk.LEFT, anchor=tk.W, wraplength=540,
-        ).grid(row=9, column=0, columnspan=2, sticky=tk.W, pady=(18, 0))
+            font=("Helvetica", 10), justify=tk.LEFT, anchor=tk.W, wraplength=560,
+        ).grid(row=11, column=0, columnspan=2, sticky=tk.W, pady=(18, 0))
 
         # ── Tab 2/3: 用户背景（身份）与附加要求（均会真正生效）──────────────
         prompt_tabs = [
@@ -2155,6 +2184,8 @@ class WorkReporter:
         bottom.pack(fill=tk.X, padx=10)
 
         def _save():
+            CONFIG.provider = label_to_key.get(provider_var.get(), "anthropic")
+            CONFIG.send_screenshots = bool(send_ss_var.get())
             CONFIG.model = fields["model"].get().strip()
             CONFIG.max_tokens_detailed = int(fields["mt_detailed"].get())
             CONFIG.max_tokens_summary = int(fields["mt_summary"].get())
@@ -2168,9 +2199,10 @@ class WorkReporter:
             CONFIG.api_key = fields["api_key"].get().strip()
             CONFIG.base_url = fields["base_url"].get().strip()
 
-            # 重建 provider（API Key / Base URL 变更时生效）
-            if CONFIG.api_key:
-                self.provider = AnthropicProvider(CONFIG.api_key, CONFIG.base_url)
+            # 重建 provider（服务商 / API Key / Base URL 变更时生效）
+            api_key, _ = resolve_credentials(CONFIG)
+            if api_key:
+                self.provider = make_provider(CONFIG)
             CONFIG.save()
             self._log("配置已保存（config.json 权限 0600）")
             win.destroy()
