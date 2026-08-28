@@ -765,6 +765,11 @@ class OpenAICompatibleProvider:
         self._base_url = base_url.rstrip("/")
 
     def generate(self, parts: list, model: str, max_tokens: int) -> tuple[str, dict]:
+        if not self._base_url:
+            raise RuntimeError(
+                "未配置 Base URL：请在 ⚙ 设置里为该服务商填写 Base URL"
+                "（选“自定义/中转站”时必填）。"
+            )
         content = []
         for p in parts:
             if p["type"] == "image":

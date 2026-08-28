@@ -940,6 +940,12 @@ class TestOpenAICompatibleProvider:
         with pytest.raises(RuntimeError):
             prov.generate([{"type": "text", "text": "x"}], "gpt-4o", 10)
 
+    def test_empty_base_url_raises_clear_error(self):
+        # e.g. picked "自定义/中转站" but left Base URL blank
+        prov = wr.OpenAICompatibleProvider("K", "")
+        with pytest.raises(RuntimeError, match="Base URL"):
+            prov.generate([{"type": "text", "text": "x"}], "some-model", 10)
+
 
 class TestMakeProvider:
     def test_anthropic_preset(self):
