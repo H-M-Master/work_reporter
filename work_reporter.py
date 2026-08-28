@@ -2121,7 +2121,29 @@ class WorkReporter:
         provider_combo.grid(row=0, column=1, sticky=tk.EW, padx=(8, 0), pady=4)
 
         # 必填/常用项
-        _add_field(tab1, "API Key（必填）", "api_key", CONFIG.api_key, 1, show="*")
+        # API Key（必填）——带「显示」开关，可临时明文查看核对
+        tk.Label(tab1, text="API Key（必填）", bg=COLORS["bg"], fg=COLORS["text"],
+                 font=("Helvetica", 11), anchor=tk.W).grid(
+            row=1, column=0, sticky=tk.W, pady=4)
+        api_row = tk.Frame(tab1, bg=COLORS["bg"])
+        api_row.grid(row=1, column=1, sticky=tk.EW, padx=(8, 0), pady=4)
+        api_row.columnconfigure(0, weight=1)
+        api_var = tk.StringVar(value=str(CONFIG.api_key))
+        api_entry = tk.Entry(
+            api_row, textvariable=api_var, font=("Menlo", 11),
+            bg=COLORS["card"], fg=COLORS["text"], insertbackground=COLORS["text"],
+            relief=tk.SOLID, bd=1, highlightthickness=0, show="*",
+        )
+        api_entry.grid(row=0, column=0, sticky=tk.EW)
+        fields["api_key"] = api_var
+        show_key_var = tk.BooleanVar(value=False)
+        tk.Checkbutton(
+            api_row, text="显示", variable=show_key_var,
+            command=lambda: api_entry.config(show="" if show_key_var.get() else "*"),
+            bg=COLORS["bg"], fg=COLORS["text_sub"], activebackground=COLORS["bg"],
+            selectcolor=COLORS["card"], font=("Helvetica", 9),
+        ).grid(row=0, column=1, padx=(6, 0))
+
         _add_field(tab1, "模型名称", "model",
                    CONFIG.model or "claude-haiku-4-5-20251001", 2)
 
