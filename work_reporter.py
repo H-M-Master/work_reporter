@@ -898,7 +898,10 @@ def generate_reports(
     parts: list = []
 
     # 截图（已由调用方采样好）
-    sampled = [p for p in (screenshot_paths or []) if p.exists()]
+    sampled = (
+        [p for p in (screenshot_paths or []) if p.exists()]
+        if CONFIG.send_screenshots else []
+    )
     if sampled:
         parts.append({
             "type": "text",

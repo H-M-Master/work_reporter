@@ -442,6 +442,52 @@ class TestGenerateReports:
         full_text = "".join(p["text"] for p in parts if p["type"] == "text")
         assert "用户补充说明" not in full_text
 
+    @patch("work_reporter._collect_git_logs", return_value="")
+    @patch("work_reporter._collect_shell_history", return_value="")
+    @patch("work_reporter._collect_browser_history", return_value="")
+    @patch("work_reporter._collect_vscode_recent_files", return_value="")
+    def test_send_screenshots_false_skips_images(self, mv, mb, ms, mg, tmp_path):
+        from PIL import Image
+        img = tmp_path / "shot.png"
+        Image.new("RGB", (40, 30), "green").save(img, "PNG")
+
+        mock_provider = MagicMock()
+        mock_provider.generate.return_value = ("a===SPLIT===b", {"input_tokens": 1, "output_tokens": 1})
+
+        activities = [{"timestamp": "09:00", "app": "X", "window": "y", "duration_min": 1}]
+        with patch.object(wr.CONFIG, "send_screenshots", False):
+            wr.generate_reports(
+                mock_provider, activities, "2026-05-12",
+                screenshot_paths=[img],
+                session_start=datetime(2026, 5, 12, 9, 0),
+            )
+        parts = mock_provider.generate.call_args.args[0]
+        assert not any(p["type"] == "image" for p in parts)
+        # the "以下是截图" preamble is also skipped
+        assert not any("采样的" in p.get("text", "") for p in parts if p["type"] == "text")
+
+    @patch("work_reporter._collect_git_logs", return_value="")
+    @patch("work_reporter._collect_shell_history", return_value="")
+    @patch("work_reporter._collect_browser_history", return_value="")
+    @patch("work_reporter._collect_vscode_recent_files", return_value="")
+    def test_send_screenshots_true_includes_images(self, mv, mb, ms, mg, tmp_path):
+        from PIL import Image
+        img = tmp_path / "shot.png"
+        Image.new("RGB", (40, 30), "green").save(img, "PNG")
+
+        mock_provider = MagicMock()
+        mock_provider.generate.return_value = ("a===SPLIT===b", {"input_tokens": 1, "output_tokens": 1})
+
+        activities = [{"timestamp": "09:00", "app": "X", "window": "y", "duration_min": 1}]
+        with patch.object(wr.CONFIG, "send_screenshots", True):
+            wr.generate_reports(
+                mock_provider, activities, "2026-05-12",
+                screenshot_paths=[img],
+                session_start=datetime(2026, 5, 12, 9, 0),
+            )
+        parts = mock_provider.generate.call_args.args[0]
+        assert any(p["type"] == "image" for p in parts)
+
 
 # ─── Config security ──────────────────────────────────────────────────────────
 
