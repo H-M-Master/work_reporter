@@ -55,6 +55,32 @@ For a proxy/gateway, set `base_url` in config or `ANTHROPIC_BEDROCK_BASE_URL`
 `config.json` may contain the key, so it is created/kept as `0600` (owner-only);
 `~/.work_reporter/` is `0700`.
 
+## Model providers
+
+Work Reporter supports **Anthropic (Claude)** and any **OpenAI-compatible** endpoint —
+DeepSeek, 通义千问 (Qwen), Kimi (Moonshot), OpenAI (GPT), Grok (xAI), and third-party
+relay stations. Pick one in **⚙ Settings → 服务商**; choosing a preset auto-fills its
+Base URL (editable — set your own for a relay or a regional/international endpoint).
+
+| Provider | Base URL |
+| --- | --- |
+| Anthropic (Claude) | (default, official) |
+| DeepSeek | `https://api.deepseek.com` |
+| 通义千问 Qwen | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+| Kimi (Moonshot) | `https://api.moonshot.cn/v1` |
+| OpenAI (GPT) | `https://api.openai.com/v1` |
+| Grok (xAI) | `https://api.x.ai/v1` |
+| 自定义 (OpenAI-compatible / relay) | (you fill it in) |
+
+Fill in the API key for your chosen provider and a model name it supports
+(e.g. `deepseek-chat`, `qwen-plus`, `gpt-4o`, `grok-4`). Env-var fallbacks:
+`ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` for Claude, `OPENAI_API_KEY` for the rest.
+
+**Screenshots need a vision-capable model.** The report's primary evidence is the
+activity log + git/browser/shell history; screenshots are auxiliary. If your model is
+text-only (e.g. `deepseek-chat`, `qwen-plus`), uncheck **发送截图 (send screenshots)**
+in Settings — the report is still generated from the text sources.
+
 ## Run
 
 ```bash

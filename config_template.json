@@ -2,6 +2,8 @@
   "model": "claude-haiku-4-5-20251001",
   "api_key": "",
   "base_url": "",
+  "provider": "anthropic",
+  "send_screenshots": true,
   "max_tokens": {
     "detailed_report": 8192,
     "summary_report": 1024
