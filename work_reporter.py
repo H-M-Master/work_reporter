@@ -1300,26 +1300,17 @@ class WorkReporter:
     def __init__(self):
         ensure_dirs()
 
-        api_key = (
-            CONFIG.api_key.strip()
-            or os.environ.get("ANTHROPIC_API_KEY", "").strip()
-            or os.environ.get("ANTHROPIC_AUTH_TOKEN", "")
-        ).strip()
-        base_url = (
-            CONFIG.base_url.strip()
-            or os.environ.get("ANTHROPIC_BEDROCK_BASE_URL", "")
-        ).strip()
-
+        api_key, _ = resolve_credentials(CONFIG)
         if not api_key:
             messagebox.showerror(
                 "缺少 API Key",
-                "请在设置里填入 API Key，或设置环境变量（任一即可）：\n"
-                "export ANTHROPIC_API_KEY=sk-ant-...\n"
-                "export ANTHROPIC_AUTH_TOKEN=...",
+                "请先在 ⚙ 设置里选择服务商并填入 API Key。\n"
+                "（Claude 也可用环境变量 ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN；"
+                "OpenAI 兼容可用 OPENAI_API_KEY。）",
             )
             raise SystemExit(1)
 
-        self.provider = AnthropicProvider(api_key, base_url)
+        self.provider = make_provider(CONFIG)
         self.session: RecordingSession | None = None  # 录制领域对象；None=未在录制
         self._poll_timer = None
         self._periodic_timer = None
