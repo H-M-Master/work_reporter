@@ -754,12 +754,14 @@ class TestConfig:
     def test_from_dict_maps_nested_keys(self):
         c = wr.Config.from_dict({
             "model": "m1", "api_key": "k", "base_url": "u",
+            "provider": "deepseek", "send_screenshots": False,
             "max_tokens": {"detailed_report": 100, "summary_report": 20},
             "screenshot": {"max_width": 640},
             "user_background": "bg", "extra_instructions": "ex",
             "lark": {"doc_url": "d", "script_dir": "~/s"},
         })
         assert c.model == "m1" and c.api_key == "k" and c.base_url == "u"
+        assert c.provider == "deepseek" and c.send_screenshots is False
         assert c.max_tokens_detailed == 100 and c.max_tokens_summary == 20
         assert c.screenshot_max_width == 640
         assert c.user_background == "bg" and c.extra_instructions == "ex"
@@ -768,6 +770,7 @@ class TestConfig:
     def test_from_dict_defaults(self):
         c = wr.Config.from_dict({})
         assert c.model == "claude-haiku-4-5-20251001"
+        assert c.provider == "anthropic" and c.send_screenshots is True
         assert c.max_tokens_detailed == 8192 and c.max_tokens_summary == 1024
         assert c.screenshot_max_width == 1280
         assert c.user_background == "" and c.lark_doc_url == ""
@@ -775,6 +778,7 @@ class TestConfig:
     def test_to_dict_roundtrip(self):
         d = {
             "model": "m", "api_key": "k", "base_url": "b",
+            "provider": "openai", "send_screenshots": False,
             "max_tokens": {"detailed_report": 1, "summary_report": 2},
             "screenshot": {"max_width": 3},
             "user_background": "bg", "extra_instructions": "ex",

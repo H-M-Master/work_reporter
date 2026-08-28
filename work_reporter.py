@@ -135,6 +135,8 @@ class Config:
     model: str = "claude-haiku-4-5-20251001"
     api_key: str = ""
     base_url: str = ""
+    provider: str = "anthropic"     # 预设键，见 PROVIDERS
+    send_screenshots: bool = True
     max_tokens_detailed: int = 8192
     max_tokens_summary: int = 1024
     screenshot_max_width: int = 1280
@@ -152,6 +154,8 @@ class Config:
             model=d.get("model", "claude-haiku-4-5-20251001"),
             api_key=d.get("api_key", ""),
             base_url=d.get("base_url", ""),
+            provider=d.get("provider", "anthropic"),
+            send_screenshots=d.get("send_screenshots", True),
             max_tokens_detailed=mt.get("detailed_report", 8192),
             max_tokens_summary=mt.get("summary_report", 1024),
             screenshot_max_width=sc.get("max_width", 1280),
@@ -170,6 +174,8 @@ class Config:
             "model": self.model,
             "api_key": self.api_key,
             "base_url": self.base_url,
+            "provider": self.provider,
+            "send_screenshots": self.send_screenshots,
             "max_tokens": {
                 "detailed_report": self.max_tokens_detailed,
                 "summary_report": self.max_tokens_summary,
