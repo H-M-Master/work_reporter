@@ -1,0 +1,25 @@
+test_work_reporter.py
+  bde4d883eac2d0ab 757,764,773,781
+work_reporter.py
+  bde4d883eac2d0ab 138-139,157-158,177-178
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.2-bit.10+672fbf0",
+  "base_commit_sha": "1e08a212dabb17a4cda8e9a672637b4410aa5d0c",
+  "prompts": {
+    "bde4d883eac2d0ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "79a7612d-6e0f-4983-aff9-6e4318b1e765",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "H-M-Master",
+      "messages": [],
+      "total_additions": 191,
+      "total_deletions": 31,
+      "accepted_lines": 214,
+      "overriden_lines": 0
+    }
+  }
+}
